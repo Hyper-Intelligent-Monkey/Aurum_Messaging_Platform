@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "dotnet-sdk": {
+      "command": "dnx",
+      "args": [
+        "Community.Mcp.DotNet@1.*",
+        "--yes"
+      ]
+    },
+    "nuget-manager": {
+      "command": "dnx",
+      "args": [
+        "NuGet.Mcp.Server",
+        "--source",
+        "https://api.nuget.org/v3/index.json",
+        "--yes"
+      ]
+    }
+  }
+}
+

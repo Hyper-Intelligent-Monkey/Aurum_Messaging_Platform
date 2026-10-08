@@ -1,0 +1,90 @@
+<div class="container-fluid p-0">
+    <div class="vh-100 d-flex flex-column chat-wrapper overflow-hidden">
+
+        <ChatHeader :partner="partner" :isTyping="chatStore.isPartnerTyping" class="flex-shrink-0" />
+
+        <!-- Messages in a Conversation -->
+        <div 
+            ref="messageListRef" 
+            class="flex-grow-1 overflow-auto px-2 py-2 bg-opacity-50 chat-scroll-stream pb-4 position-relative"
+            style="min-height: 0;"
+            @scroll.passive="handleScroll"
+        >
+            <!-- Visible loading spinner while conversation or initial messages are loading -->
+            <div 
+                v-if="isLoadingChat" 
+                class="d-flex justify-content-center align-items-center h-100 py-5"
+            >
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Loading chat...</span>
+                </div>
+            </div>
+
+            <div 
+                v-show="!isLoadingChat"
+                class="chat-content-container"
+                :class="{ 'opacity-100': isChatReady, 'opacity-0': !isChatReady }"
+                style="transition: opacity 0.25s ease-in-out;"
+            >
+                <div v-if="chatStore.loadingOlderMessages" class="text-center py-2">
+                    <div class="spinner-border spinner-border-sm text-warning" role="status">
+                        <span class="visually-hidden">Loading older messages...</span>
+                    </div>
+                </div>
+
+                <template v-if="chatStore.messages.length > 0">
+                    <template v-for="(msg, index) in chatStore.messages" :key="msg.id">
+                        <!-- Date Divider -->
+                        <div 
+                            v-if="shouldShowDateDivider(msg, index)" 
+                            class="text-center my-3"
+                            style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);"
+                        >
+                            {{ formatDateDivider(msg.sentAt) }}
+                        </div>
+
+                        <MessageContainer 
+                            :message="msg" 
+                            :currentUserId="currentUserId"
+                            :partnerName="partner?.username"
+                            :activeMenuId="activeMenuMessageId"
+                            @open-menu="id => activeMenuMessageId = id"
+                            @close-menu="activeMenuMessageId = null"
+                            @reply="handleReply"
+                            @edit="handleEdit"
+                            @navigate-to-message="scrollToMessage"
+                        />
+                    </template>
+                </template>
+
+                <div v-else class="text-center mt-5" style="font-family: var(--font-family); color: var(--text-secondary); font-size: var(--font-size-md);">
+                    <p>No messages yet. Send a message to begin the conversation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="chat-input-container flex-shrink-0 position-relative">
+            <div 
+                v-if="!partner?.isDeleted && partner?.userId !== 0 && chatStore.isPartnerTyping" 
+                class="typing-floating-overlay"
+            >
+                <div class="typing-bubble px-3 py-2 rounded-3 d-flex align-items-center gap-1 shadow-sm">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            </div>
+
+            <MessageInput 
+                :recipientId="partner?.userId" 
+                :isDeletedAccount="partner?.isDeleted || partner?.userId === 0"
+                :editingMessage="editingMessage"
+                :replyingToMessage="replyingToMessage"
+                @cancel-edit="editingMessage = null"
+                @save-edit="handleSaveEdit"
+                @cancel-reply="replyingToMessage = null"
+            />
+        </div>
+    </div>
+</div>

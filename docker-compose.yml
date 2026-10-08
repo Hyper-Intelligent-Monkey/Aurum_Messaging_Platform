@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aurum-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: messaging_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d messaging_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: aurum-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=messaging_platform;Username=postgres;Password=${DB_PASSWORD}
+      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL is required}
+      SERVER_URL: ${SERVER_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      JwtSettings__Secret: ${JwtSettings__Secret:?JwtSettings__Secret is required}
+      JwtSettings__Issuer: ${JwtSettings__Issuer:-MessagingServer}
+      JwtSettings__Audience: ${JwtSettings__Audience:-MessagingClient}
+      JwtSettings__ExpiryMinutes: ${JwtSettings__ExpiryMinutes:-120}
+      EmailSettings__Host: ${EmailSettings__Host:-smtp.gmail.com}
+      EmailSettings__Port: ${EmailSettings__Port:-587}
+      EmailSettings__SenderEmail: ${EmailSettings__SenderEmail}
+      EmailSettings__SenderName: ${EmailSettings__SenderName:-Aurum Messaging}
+      EmailSettings__Password: ${EmailSettings__Password}
+      EmailSettings__EnableSsl: ${EmailSettings__EnableSsl:-true}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: aurum-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:?DOMAIN_NAME is required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:
+

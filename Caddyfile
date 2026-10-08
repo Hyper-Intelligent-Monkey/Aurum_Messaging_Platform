@@ -1,0 +1,11 @@
+{$DOMAIN_NAME} {
+    encode gzip zstd
+
+    reverse_proxy api:8080
+
+    log {
+        output stdout
+        format console
+    }
+}
+
