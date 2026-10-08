@@ -992,8 +992,10 @@ const handleChangePassword = async () => {
     border: none;
 }
 
-.btn-accent:hover:not(:disabled) {
+.btn-accent:hover:not(:disabled), .btn-accent:focus:not(:disabled) {
     background-color: var(--accent-hover);
+    color: var(--text-inversed);
+    border: none;
 }
 
 .btn-outline-theme {
@@ -1001,7 +1003,7 @@ const handleChangePassword = async () => {
     border: 1px solid var(--border-light, rgba(255, 255, 255, 0.15));
 }
 
-.btn-outline-theme:hover {
+.btn-outline-theme:hover, .btn-outline-theme:focus {
     color: var(--text-primary, #e9edef);
     background-color: rgba(255, 255, 255, 0.05);
 }
