@@ -1,0 +1,13 @@
+# Backend Build Outputs
+**/bin/
+**/obj/
+**/.vs/
+*.user
+
+# Frontend Dependencies & Build
+client/node_modules/
+client/dist/
+client/.vite/
+
+# Database Files / Local Storage
+*.db

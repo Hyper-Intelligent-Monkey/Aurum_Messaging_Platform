@@ -1,0 +1,15 @@
+{
+  "name": "workspace",
+  "private": true,
+  "scripts": {
+    "build": "dotnet build server/MessagingServer.slnx && npm --prefix client run build",
+    "build:server": "dotnet build server/MessagingServer.slnx",
+    "build:client": "npm --prefix client run build",
+    "migrate": "dotnet ef database update -s server/src/Api -p server/src/Infrastructure",
+    "migration:add": "dotnet ef migrations add -s server/src/Api -p server/src/Infrastructure",
+    "dev:server": "dotnet watch --project server/src/Api",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "npx concurrently -n \"server,client\" -c \"blue,green\" \"dotnet watch --project server/src/Api\" \"npm --prefix client run dev\""
+  },
+  "author": "Vinn Runkee Cañares"
+}

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "dotnet-sdk": {
+      "command": "dotnet",
+      "args": [
+        "C:\\Users\\acer\\PersonalProjectFolder\\dotnet-mcp\\DotNetMcp\\bin\\Debug\\net10.0\\DotNetMcp.dll"
+      ]
+    },
+    "nuget-manager": {
+      "command": "dnx",
+      "args": [
+        "NuGet.Mcp.Server",
+        "--source",
+        "https://api.nuget.org/v3/index.json",
+        "--yes"
+      ]
+    }
+  }
+}

@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+    --hue-warm-gold: 40.24; /* warm gold */
+    --amber-gold: 38;
+    --gold-white: hsl(var(--hue-warm-gold), 62.12%, 74.12%);
+
+    /* background colors */
+    --bg-sidebar: var(--gold-white);
+    --bg-modal: var(--gold-white);
+    --bg-chat-header: hsl(var(--hue-warm-gold), 55%, 78%);
+    --bg-input: hsl(var(--hue-warm-gold), 50%, 82%);
+    --bg-app: hsl(var(--hue-warm-gold), 45%, 68%);
+    --bg-chat-area: hsl(var(--hue-warm-gold), 40%, 64%);
+  
+    /* message bubble colors */
+    --bubble-incoming: var(--gold-white);
+    --bubble-incoming-text: hsl(var(--hue-warm-gold), 80%, 14%);
+    --bubble-outgoing: hsl(var(--amber-gold), 75%, 45%);
+    --bubble-outgoing-text: hsl(var(--hue-warm-gold), 62%, 96%);
+    --bubble-outgoing-hover: hsl(var(--amber-gold), 75%, 38%);
+  
+    /* text colors */
+    --text-primary: hsl(0, 0%, 10%);
+    --text-secondary: hsl(var(--hue-warm-gold), 40%, 30%);
+    --text-muted: hsl(var(--hue-warm-gold), 25%, 45%);
+    --text-inversed: hsl(0, 0%, 95%);
+  
+    /* accent & action colors */
+    --accent-primary: hsl(38, 55%, 50%);
+    --accent-hover: hsl(38, 67%, 38%);
+    --accent-active: hsl(38, 79%, 26%);
+    --accent-light: hsl(var(--hue-warm-gold), 60%, 86%);
+    --status-green: hsl(155, 75%, 35%);
+    --status-red: hsl(350, 80%, 42%);
+
+    /* border colors */
+    --border-light: hsl(var(--hue-warm-gold), 35%, 65%);
+    --border-subtle: hsl(var(--hue-warm-gold), 40%, 70%);
+  
+    /* shadows */
+    --shadow-sm: 0 1px 2px 0 hsla(var(--hue-warm-gold), 80%, 10%, 0.1);
+    --shadow-md: 0 4px 6px -1px hsla(var(--hue-warm-gold), 80%, 10%, 0.15);
+    --shadow-lg: 0 10px 15px -3px hsla(var(--hue-warm-gold), 80%, 10%, 0.2);
+    
+    /* typography */
+    --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+
+    --base-unit: 4px;
+
+    /* radius */
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+
+    /* chat containers for media messages or attachments */
+    --media-card-width: 320px;
+    --media-card-bg: var(--text-inversed);
+    --media-card-border: 1px solid rgba(0, 0, 0, 0.08);
+    --media-card-radius: var(--radius-md);
+    --media-card-padding: 10px 12px;
+    --media-card-shadow: var(--shadow-sm);
+
+
+    /* Colors used for the component to view the media */
+    --accent-tint-subtle: rgba(197, 154, 63, 0.08);
+    --accent-tint-light: rgba(197, 154, 63, 0.15);
+    --accent-tint-medium: rgba(197, 154, 63, 0.22);
+    --accent-tint-border: rgba(197, 154, 63, 0.25);
+    --accent-btn-shadow: 0 2px 6px rgba(181, 133, 37, 0.32);
+
+    /* action button sizes */
+    --media-btn-size: 38px;
+    --media-btn-size-sm: 28px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--hue-warm-gold), 30%, 55%);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
