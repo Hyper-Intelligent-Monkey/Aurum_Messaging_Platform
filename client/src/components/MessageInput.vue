@@ -103,6 +103,15 @@ const adjustTextareaHeight = () => {
 
 let typingTimeout = null;
 
+// Helper to immediately cancel typing timeout and notify the server
+const clearTyping = () => {
+    if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        typingTimeout = null;
+    }
+    chatStore.sendTypingIndicator(false);
+};
+
 // Handle input field view changes
 const handleInput = () => {
     adjustTextareaHeight();
@@ -125,6 +134,7 @@ watch(() => props.editingMessage, (msg) => {
         adjustTextareaHeight();
         nextTick(() => textareaRef.value?.focus());
     } else {
+        clearTyping();
         inputEl.value = "";
         adjustTextareaHeight();
     }
@@ -138,6 +148,7 @@ const replyingAuthor = computed(() => {
 
 // Edit action handlers
 const handleCancelEdit = () => {
+    clearTyping();
     emit("cancel-edit");
 };
 
@@ -149,6 +160,7 @@ const handleConfirmEdit = () => {
         toastStore.error("Message cannot exceed 2000 characters.");
         return;
     }
+    clearTyping();
     emit("save-edit", text);
 };
 
@@ -215,11 +227,7 @@ const handleSubmit = async () => {
     }
 
     // Immediately cancel typing indicator before sending message
-    if (typingTimeout) {
-        clearTimeout(typingTimeout);
-        typingTimeout = null;
-    }
-    chatStore.sendTypingIndicator(false);
+    clearTyping();
 
     isUploading.value = true;
     try {
@@ -271,11 +279,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);
-    if (typingTimeout) {
-        clearTimeout(typingTimeout);
-        typingTimeout = null;
-    }
-    chatStore.sendTypingIndicator(false);
+    clearTyping();
 });
 </script>
 

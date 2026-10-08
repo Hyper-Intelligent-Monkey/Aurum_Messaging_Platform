@@ -377,6 +377,11 @@ export const useChatStore = defineStore('chat', {
                     msg.content = updatedMessage.content;
                     msg.isEdited = updatedMessage.isEdited;
                 }
+                const conv = this.conversations.find(c => c.id === this.activeConversationId);
+                if (conv?.lastMessage?.id === messageId) {
+                    conv.lastMessage.content = updatedMessage.content;
+                    conv.lastMessage.isEdited = updatedMessage.isEdited;
+                }
             } catch (error) {
                 console.error("Failed to edit message:", error);
                 throw error;
@@ -718,6 +723,37 @@ export const useChatStore = defineStore('chat', {
                 }
             };
 
+            // reflect message edits in the UI
+            this.onMessageEdited = (updatedMessage) => {
+                // Immediately clear typing indicator for the editor when their edit arrives
+                const typingKey = `${updatedMessage.conversationId}_${updatedMessage.senderId}`;
+                if (recipientTypingTimeouts.has(typingKey)) {
+                    clearTimeout(recipientTypingTimeouts.get(typingKey));
+                    recipientTypingTimeouts.delete(typingKey);
+                }
+                if (this.typingUsers[updatedMessage.conversationId]?.[updatedMessage.senderId]) {
+                    const convTyping = { ...(this.typingUsers[updatedMessage.conversationId] || {}) };
+                    delete convTyping[updatedMessage.senderId];
+                    this.typingUsers = {
+                        ...this.typingUsers,
+                        [updatedMessage.conversationId]: convTyping
+                    };
+                }
+
+                if (updatedMessage.conversationId === this.activeConversationId) {
+                    const target = this.messages.find(m => m.id === updatedMessage.id);
+                    if (target) {
+                        target.content = updatedMessage.content;
+                        target.isEdited = updatedMessage.isEdited;
+                    }
+                }
+                const conv = this.conversations.find(c => c.id === updatedMessage.conversationId);
+                if (conv?.lastMessage?.id === updatedMessage.id) {
+                    conv.lastMessage.content = updatedMessage.content;
+                    conv.lastMessage.isEdited = updatedMessage.isEdited;
+                }
+            };
+
             // listeners for incoming events from the server
             signalrService.on("ReceiveMessage", this.onReceiveMessage);
             signalrService.on("UserTyping", this.onUserTyping);
@@ -725,6 +761,7 @@ export const useChatStore = defineStore('chat', {
             signalrService.on("UserAvatarChanged", this.onUserAvatarChanged);
             signalrService.on("MessagesSeen", this.onMessagesSeen);
             signalrService.on("MessageDeleted", this.onMessageDeleted);
+            signalrService.on("MessageEdited", this.onMessageEdited);
         },
 
         // remove specific signalr listeners, disconnect works the same thing but for all handlers
@@ -735,6 +772,7 @@ export const useChatStore = defineStore('chat', {
             if (this.onUserAvatarChanged) signalrService.off("UserAvatarChanged", this.onUserAvatarChanged);
             if (this.onMessagesSeen) signalrService.off("MessagesSeen", this.onMessagesSeen);
             if (this.onMessageDeleted) signalrService.off("MessageDeleted", this.onMessageDeleted);
+            if (this.onMessageEdited) signalrService.off("MessageEdited", this.onMessageEdited);
         },
     }
 });
