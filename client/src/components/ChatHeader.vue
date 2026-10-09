@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowLeftIcon, EllipsisVerticalIcon, UserIcon } from "@heroicons/vue/24/solid";
-import { getFileUrl } from "../services/mediaService";
+import { getFileUrl, isAvatarLoaded, markAvatarLoaded, isAvatarFailed, markAvatarFailed } from "../services/mediaService";
 import { useChatStore } from "../store/chatStore";
 
 const router = useRouter();
@@ -22,28 +22,33 @@ const props = defineProps({
 const emit = defineEmits(["options"]);
 
 const hasImageError = ref(false);
+const isImageLoaded = ref(false);
 
-// Reset error state whenever partner or avatar changes
-watch(() => props.partner?.avatar, () => {
-    hasImageError.value = false;
+// Determine avatar URL
+const avatarUrl = computed(() => {
+    return props.partner?.avatar ? getFileUrl(props.partner.avatar) : "";
 });
 
 // Determine whether an avatar image should be rendered
 const hasAvatar = computed(() => {
-    const av = props.partner?.avatar;
-    if (!av || av === 'defaults/avatar.png' || av === 'default_avatar.png') {
-        return false;
-    }
-    return !hasImageError.value;
+    return !!props.partner?.avatar && !hasImageError.value;
 });
 
-// Determine avatar URL
-const avatarUrl = computed(() => {
-    if (props.partner?.avatar) {
-        return getFileUrl(props.partner.avatar);
-    }
-    return null;
-});
+// Check shared cache immediately on render and on avatar changes
+watch(avatarUrl, (newUrl) => {
+    isImageLoaded.value = isAvatarLoaded(newUrl);
+    hasImageError.value = isAvatarFailed(newUrl);
+}, { immediate: true });
+
+const handleImageLoad = () => {
+    isImageLoaded.value = true;
+    markAvatarLoaded(avatarUrl.value);
+};
+
+const handleImageError = () => {
+    hasImageError.value = true;
+    markAvatarFailed(avatarUrl.value);
+};
 
 // display recepient name
 const displayName = computed(() => {
@@ -108,11 +113,17 @@ const navigateToMenu = () => {
                     class="avatar-img" 
                     :src="avatarUrl" 
                     :alt="displayName" 
-                    @error="hasImageError = true"
+                    loading="eager" 
+                    decoding="async" 
+                    referrerpolicy="no-referrer" 
+                    @load="handleImageLoad" 
+                    @error="handleImageError" 
                 />
+
                 <div v-else class="avatar-fallback d-flex align-items-center justify-content-center">
                     <UserIcon style="width: 22px; height: 22px;" class="user-icon" />
                 </div>
+
             
                 <span 
                     v-if="props.partner?.isOnline" 
@@ -194,6 +205,7 @@ const navigateToMenu = () => {
     border-radius: 50%;
     object-fit: cover;
     border: 1.5px solid var(--border-light);
+    transition: opacity 0.2s ease-in-out;
 }
 
 .avatar-fallback {

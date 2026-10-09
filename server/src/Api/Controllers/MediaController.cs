@@ -112,6 +112,12 @@ public class MediaController : ApiControllerBase
             }
         }
 
+        // Enables browser caching specifically for avatars (URLs contain unique GUIDs and are immutable)
+        if (filePath.StartsWith("avatars/", StringComparison.OrdinalIgnoreCase))
+        {
+            Response.Headers.CacheControl = "public, max-age=604800, immutable";
+        }
+
         var (fileStream, contentType) = await _fileStorageService.GetFileAsync(filePath, cancellationToken);
         return File(fileStream, contentType, enableRangeProcessing: true);
     }

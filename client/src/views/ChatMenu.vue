@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { 
     UserIcon, 
@@ -19,7 +19,7 @@ import {
 import { EllipsisVerticalIcon } from "@heroicons/vue/24/solid";
 import { useChatStore } from "../store/chatStore";
 import { useAuthStore } from "../store/authStore";
-import { getFileUrl } from "../services/mediaService";
+import { getFileUrl, isAvatarLoaded, markAvatarLoaded, isAvatarFailed, markAvatarFailed } from "../services/mediaService";
 import { blockUser, unblockUser, getBlockedUsers } from "../services/userService";
 import MediaLightbox from "../components/MediaLightbox.vue";
 import MuteModal from "../components/MuteModal.vue";
@@ -29,9 +29,11 @@ const router = useRouter();
 const chatStore = useChatStore();
 const authStore = useAuthStore();
 
-const isBlocked = ref(false);
+// Synchronous block status from store for Frame-0 instantaneous state
+const isBlocked = computed(() => !!(partner.value?.userId && chatStore.blockStatusMap[partner.value.userId]?.isBlockedByMe));
 const isBlockingAction = ref(false);
 const hasImageError = ref(false);
+const isAvatarLoadedState = ref(false);
 const isPageContentLoaded = ref(false);
 
 // Expandable Media State & Responsive Widths
@@ -110,8 +112,23 @@ const formattedMuteStatus = computed(() => {
     return `Muted until ${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${timeStr}`;
 });
 
-const avatarUrl = computed(() => partner.value?.avatar ? getFileUrl(partner.value.avatar) : null);
-const hasAvatar = computed(() => partner.value?.avatar && partner.value.avatar !== 'defaults/avatar.png' && !hasImageError.value);
+const avatarUrl = computed(() => partner.value?.avatar ? getFileUrl(partner.value.avatar) : "");
+const hasAvatar = computed(() => !!partner.value?.avatar && !hasImageError.value);
+
+watch(avatarUrl, (newUrl) => {
+    isAvatarLoadedState.value = isAvatarLoaded(newUrl);
+    hasImageError.value = isAvatarFailed(newUrl);
+}, { immediate: true });
+
+const handleImageLoad = () => {
+    isAvatarLoadedState.value = true;
+    markAvatarLoaded(avatarUrl.value);
+};
+
+const handleImageError = () => {
+    hasImageError.value = true;
+    markAvatarFailed(avatarUrl.value);
+};
 
 // Format last seen time
 const formattedLastSeen = computed(() => {
@@ -165,11 +182,9 @@ const toggleBlock = async () => {
     isBlockingAction.value = true;
     try {
         if (isBlocked.value) {
-            await unblockUser(partner.value.userId);
-            isBlocked.value = false;
+            await chatStore.unblockUser(partner.value.userId);
         } else {
-            await blockUser(partner.value.userId);
-            isBlocked.value = true;
+            await chatStore.blockUser(partner.value.userId);
         }
     } catch (err) {
         console.error("Failed to toggle block:", err);
@@ -178,17 +193,10 @@ const toggleBlock = async () => {
     }
 };
 
-// Check if user is blocked
+// Check if user is blocked (runs in background to ensure fresh state)
 const checkBlockedStatus = async () => {
     if (!partner.value?.userId) return;
-    try {
-        const blockedList = await getBlockedUsers();
-        if (Array.isArray(blockedList)) {
-            isBlocked.value = blockedList.some(b => Number(b.blockedUserId || b.id) === Number(partner.value.userId));
-        }
-    } catch (err) {
-        console.error("Failed to check blocked status:", err);
-    }
+    await chatStore.fetchBlockStatus(partner.value.userId);
 };
 
 // Robust Media Format Helpers (Handles ContentType and file extensions returned from GetConversationMedia)
@@ -335,7 +343,18 @@ onUnmounted(() => {
             <!-- Profile Card -->
             <div class="profile-card text-center p-4 rounded-4 shadow-sm mb-3">
                 <div class="avatar-wrapper position-relative mx-auto mb-3">
-                    <img v-if="hasAvatar" :src="avatarUrl" :alt="partner?.username" class="avatar-lg shadow" @error="hasImageError = true" />
+
+                    <img 
+                        v-if="hasAvatar" 
+                        :src="avatarUrl" 
+                        :alt="partner?.username" 
+                        class="avatar-lg shadow" 
+                        loading="eager" 
+                        decoding="async" 
+                        referrerpolicy="no-referrer" 
+                        @load="handleImageLoad" 
+                        @error="handleImageError" 
+                    />
                     <div v-else class="avatar-fallback-lg shadow d-flex align-items-center justify-content-center mx-auto">
                         <UserIcon style="width: 44px; height: 44px;" class="text-secondary" />
                     </div>
@@ -650,6 +669,7 @@ onUnmounted(() => {
     object-fit: cover;
     border: 2px solid var(--border-light);
     box-shadow: var(--shadow-md);
+    transition: opacity 0.2s ease-in-out;
 }
 
 .avatar-fallback-lg {

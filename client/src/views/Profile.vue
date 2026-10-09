@@ -17,7 +17,7 @@ import {
 import { useAuthStore } from "../store/authStore";
 import { useUserStore } from "../store/userStore";
 import { useToastStore } from "../store/toastStore";
-import { getFileUrl, isAvatarFailed, markAvatarFailed } from "../services/mediaService";
+import { getFileUrl, isAvatarFailed, markAvatarFailed, isAvatarLoaded, markAvatarLoaded } from "../services/mediaService";
 import { changePassword, setPassword } from "../services/userService";
 import { 
     getNotificationPermission, 
@@ -117,9 +117,14 @@ const avatarUrl = computed(() => {
 
 // watch for avatar changes
 watch(avatarUrl, (newUrl) => {
-    isLoaded.value = false;
+    isLoaded.value = isAvatarLoaded(newUrl);
     hasImageError.value = isAvatarFailed(newUrl);
 }, { immediate: true });
+
+const handleImageLoad = () => {
+    isLoaded.value = true;
+    markAvatarLoaded(avatarUrl.value);
+};
 
 const handleImageError = () => {
     hasImageError.value = true;
@@ -384,6 +389,10 @@ const handleChangePassword = async () => {
         isSavingPassword.value = false;
     }
 };
+
+const hasAvatar = computed(() => {
+    return !!(previewBlob.value || user.value?.avatar) && !hasImageError.value;
+});
 </script>
 
 <template>
@@ -399,15 +408,18 @@ const handleChangePassword = async () => {
                 <!-- Avatar Section -->
                 <div class="avatar-section position-relative d-inline-block mx-auto mb-3">
                     <img 
-                        v-if="!hasImageError"
-                        v-show="isLoaded"
+                        v-if="hasAvatar"
                         :src="avatarUrl" 
                         alt="Profile Picture" 
                         class="avatar-img rounded-circle shadow"
-                        @load="isLoaded = true"
+                        loading="eager"
+                        decoding="async"
+                        referrerpolicy="no-referrer"
+                        @load="handleImageLoad"
                         @error="handleImageError"
                     />
-                    <div v-if="hasImageError || !isLoaded" class="avatar-fallback shadow d-flex align-items-center justify-content-center mx-auto">
+
+                    <div v-else class="avatar-fallback shadow d-flex align-items-center justify-content-center mx-auto">
                         <UserIcon style="width: 52px; height: 52px;" class="text-secondary" />
                     </div>
                     
@@ -797,6 +809,7 @@ const handleChangePassword = async () => {
     height: 120px;
     object-fit: cover;
     border: 3px solid var(--accent-primary, #d1a153);
+    transition: opacity 0.2s ease-in-out;
 }
 
 .avatar-fallback {
@@ -1033,13 +1046,23 @@ const handleChangePassword = async () => {
     font-size: 0.85rem;
 }
 
+.custom-switch{
+    cursor: pointer;
+}
+
 .custom-switch:checked {
     background-color: var(--accent-primary, #d1a153) !important;
     border-color: var(--accent-primary, #d1a153) !important;
 }
 
-.custom-switch:focus {
-    box-shadow: 0 0 0 0.2rem rgba(209, 161, 83, 0.25) !important;
+.form-check-input.custom-switch:focus {
+    outline: 0 !important;
+    box-shadow: none !important;
+    border-color: var(--border-light, rgba(255, 255, 255, 0.25)) !important;
+}
+
+.form-check-input.custom-switch:checked:focus {
     border-color: var(--accent-primary, #d1a153) !important;
+    box-shadow: none !important;
 }
 </style>

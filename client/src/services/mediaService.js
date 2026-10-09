@@ -91,3 +91,19 @@ export function markAvatarFailed(url) {
     }
 }
 
+// Central in-memory cache of loaded avatar URLs shared across all components and users
+const loadedAvatarCache = new Set();
+
+// Check if an avatar URL has already been loaded anywhere in the current session
+export function isAvatarLoaded(url) {
+    if (!url) return false;
+    return loadedAvatarCache.has(url);
+}
+
+// Mark an avatar URL as loaded in memory
+export function markAvatarLoaded(url) {
+    if (url) {
+        loadedAvatarCache.add(url);
+    }
+}
+

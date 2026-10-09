@@ -3,6 +3,7 @@ import { useAuthStore } from './authStore';
 import { getConversations, getConversationById, searchConversations, muteConversation, unmuteConversation, getConversationMedia } from '../services/conversationService';
 import { getMessages, sendMessage, editMessage, deleteMessage, markAsSeen } from '../services/messageService';
 import { uploadAttachment, downloadFileBlob } from '../services/mediaService';
+import { getBlockStatus, blockUser as blockUserApi, unblockUser as unblockUserApi } from '../services/userService';
 import { signalrService } from '../services/signalrService';
 import { showIncomingMessageNotification } from '../services/notificationService';
 import router from '../router';
@@ -25,6 +26,7 @@ export const useChatStore = defineStore('chat', {
         hasMoreMedia: true,
         sendingMessage: false,
         typingUsers: {},
+        blockStatusMap: {},
     }),
 
     getters: {
@@ -446,6 +448,48 @@ export const useChatStore = defineStore('chat', {
             } catch (error) {
                 console.error("Failed to unmute conversation:", error);
             }
+        },
+
+        // fetch and cache bidirectional block status in memory
+        async fetchBlockStatus(userId) {
+            if (!userId) return null;
+            try {
+                const status = await getBlockStatus(userId);
+                this.blockStatusMap = {
+                    ...this.blockStatusMap,
+                    [userId]: status
+                };
+                return status;
+            } catch (err) {
+                console.error("Failed to fetch block status:", err);
+                return null;
+            }
+        },
+
+        // block user and immediately update store
+        async blockUser(userId) {
+            if (!userId) return;
+            await blockUserApi(userId);
+            this.blockStatusMap = {
+                ...this.blockStatusMap,
+                [userId]: {
+                    ...(this.blockStatusMap[userId] || {}),
+                    isBlockedByMe: true
+                }
+            };
+        },
+
+        // unblock user and immediately update store
+        async unblockUser(userId) {
+            if (!userId) return;
+            await unblockUserApi(userId);
+            this.blockStatusMap = {
+                ...this.blockStatusMap,
+                [userId]: {
+                    ...(this.blockStatusMap[userId] || {}),
+                    isBlockedByMe: false
+                }
+            };
         },
 
         // fetch conversation details

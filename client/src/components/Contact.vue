@@ -8,7 +8,7 @@ const activeContactMenuId = ref(null);
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { UserIcon, BellSlashIcon } from '@heroicons/vue/24/solid';
 import { BellIcon, NoSymbolIcon } from '@heroicons/vue/24/outline';
-import { getFileUrl } from "../services/mediaService";
+import { getFileUrl, isAvatarLoaded, markAvatarLoaded, isAvatarFailed, markAvatarFailed } from "../services/mediaService";
 import { useChatStore } from "../store/chatStore";
 import { blockUser, unblockUser, getBlockStatus } from "../services/userService";
 import MuteModal from "./MuteModal.vue";
@@ -41,29 +41,37 @@ const partner = computed(() => {
     return props.conversation.participants.find(p => p.userId !== props.currentUserId) || props.conversation.participants[0];
 });
 
+// determine avatar URL
+const avatarUrl = computed(() => {
+    return partner.value?.avatar ? getFileUrl(partner.value.avatar) : "";
+});
+
 // Single reactive declaration for image loading error and loaded state
 const hasImageError = ref(false);
 const isImageLoaded = ref(false);
 
-// Reset image error and loading state whenever the contact or avatar changes
-watch(() => partner.value?.avatar, () => {
-    hasImageError.value = false;
-    isImageLoaded.value = false;
-});
-
 // Single definition determining whether to show the <img> or the fallback <UserIcon />
 const hasAvatar = computed(() => {
-    const av = partner.value?.avatar;
-    if (!av || av === 'defaults/avatar.png' || av === 'default_avatar.png') {
-        return false;
-    }
-    return !hasImageError.value;
+    return !!partner.value?.avatar && !hasImageError.value;
 });
 
-// determine avatar URL
-const avatarUrl = computed(() => {
-    return partner.value?.avatar ? getFileUrl(partner.value.avatar) : null;
-});
+// Check shared cache immediately on render and whenever avatar URL changes
+watch(avatarUrl, (newUrl) => {
+    isImageLoaded.value = isAvatarLoaded(newUrl);
+    hasImageError.value = isAvatarFailed(newUrl);
+}, { immediate: true });
+
+// cache loaded avatar in memory
+const handleImageLoad = () => {
+    isImageLoaded.value = true;
+    markAvatarLoaded(avatarUrl.value);
+};
+
+// handles if the avatar image is an error
+const handleImageError = () => {
+    hasImageError.value = true;
+    markAvatarFailed(avatarUrl.value);
+};
 
 // display recepient name
 const displayName = computed(() => {
@@ -142,7 +150,7 @@ const menuRef = ref(null);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuOpen = computed(() => activeContactMenuId.value === props.conversation.id);
 const showMuteModal = ref(false);
-const isBlocked = ref(false);
+const isBlocked = computed(() => !!(partner.value?.userId && chatStore.blockStatusMap[partner.value.userId]?.isBlockedByMe));
 const isBlockLoading = ref(false);
 
 // Touch long-press tracking
@@ -172,14 +180,7 @@ const openContextMenu = async (clientX, clientY) => {
     activeContactMenuId.value = props.conversation.id;
 
     if (partner.value?.userId) {
-        try {
-            const status = await getBlockStatus(partner.value.userId);
-            if (status) {
-                isBlocked.value = !!status.isBlockedByMe;
-            }
-        } catch (err) {
-            console.error("Failed to check block status:", err);
-        }
+        chatStore.fetchBlockStatus(partner.value.userId);
     }
 };
 
@@ -252,11 +253,9 @@ const handleToggleBlock = async () => {
     isBlockLoading.value = true;
     try {
         if (isBlocked.value) {
-            await unblockUser(partner.value.userId);
-            isBlocked.value = false;
+            await chatStore.unblockUser(partner.value.userId);
         } else {
-            await blockUser(partner.value.userId);
-            isBlocked.value = true;
+            await chatStore.blockUser(partner.value.userId);
         }
     } catch (err) {
         console.error("Failed to toggle block status:", err);
@@ -323,8 +322,8 @@ onUnmounted(() => {
                 loading="eager"
                 decoding="async"
                 referrerpolicy="no-referrer"
-                @load="isImageLoaded = true"
-                @error="hasImageError = true" 
+                @load="handleImageLoad"
+                @error="handleImageError" 
             />
             
             <span v-if="!isUncontacted && isOnline" 

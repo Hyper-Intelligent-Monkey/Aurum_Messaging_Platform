@@ -4,7 +4,7 @@ import { storeToRefs } from "pinia";
 import { useRouter, useRoute } from "vue-router";
 import Logo from "../assets/MessagingPlatformLogo.png";
 import { useAuthStore } from "../store/authStore";
-import { getFileUrl, isAvatarFailed, markAvatarFailed } from "../services/mediaService";
+import { getFileUrl, isAvatarFailed, markAvatarFailed, isAvatarLoaded, markAvatarLoaded } from "../services/mediaService";
 import { ArrowLeftStartOnRectangleIcon, UserIcon, ArrowLeftIcon } from "@heroicons/vue/24/solid";
 
 const authStore = useAuthStore();
@@ -64,11 +64,22 @@ const avatarUrl = computed(() => {
     return displayUser.value?.avatar ? getFileUrl(displayUser.value.avatar) : "";
 });
 
+// Single definition determining whether to show the <img> or the fallback <UserIcon />
+const hasAvatar = computed(() => {
+    return !!displayUser.value?.avatar && !hasImageError.value;
+});
+
 // watch for avatar error during change
 watch(avatarUrl, (newUrl) => {
-    isLoaded.value = false;
+    isLoaded.value = isAvatarLoaded(newUrl);
     hasImageError.value = isAvatarFailed(newUrl);
 }, { immediate: true });
+
+// cache loaded avatar in memory
+const handleImageLoad = () => {
+    isLoaded.value = true;
+    markAvatarLoaded(avatarUrl.value);
+};
 
 // handles if the avatar image is an error
 const handleImageError = () => {
@@ -85,7 +96,7 @@ const handleImageError = () => {
                 <button 
                     v-if="isProfilePage" 
                     @click="handleBack" 
-                    class="btn-nav-back"
+                    class="btn-nav-back" 
                     title="Back to contacts"
                     aria-label="Back"
                 >
@@ -117,16 +128,21 @@ const handleImageError = () => {
                     class="nav-avatar-btn text-decoration-none" 
                     :title="displayUser.username"
                 >
+
                     <img 
-                        v-if="displayUser.avatar && !hasImageError" 
-                        v-show="isLoaded"
+                        v-if="hasAvatar" 
                         :src="avatarUrl" 
                         class="nav-avatar" 
                         :alt="displayUser.username" 
-                        @load="isLoaded = true"
-                        @error="handleImageError"
+                        loading="eager" 
+                        decoding="async" 
+                        referrerpolicy="no-referrer" 
+                        @load="handleImageLoad" 
+                        @error="handleImageError" 
                     />
-                    <div v-if="!displayUser.avatar || hasImageError || !isLoaded" class="nav-avatar-fallback">
+
+                    <!-- Fallback icon displayed while loading or if no avatar/error -->
+                    <div v-else class="nav-avatar-fallback">
                         <UserIcon class="nav-user-icon" />
                     </div>
                 </router-link>
@@ -218,8 +234,10 @@ const handleImageError = () => {
     justify-content: center;
     width: 38px;
     height: 38px;
+    position: relative;
     border-radius: var(--radius-full);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
 }
 
 .nav-avatar {
@@ -229,6 +247,7 @@ const handleImageError = () => {
     object-fit: cover;
     border: 1.5px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    transition: opacity 0.2s ease-in-out;
 }
 
 .nav-avatar-fallback {

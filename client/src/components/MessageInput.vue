@@ -50,35 +50,23 @@ const selectedFile = ref(null);
 const fileBlobUrl = ref("");
 const isUploading = ref(false);
 
-// Blocking indicator state
-const isBlockedByMe = ref(false);
-const isBlockedByThem = ref(false);
+// Blocking indicator state: synchronous computed from store for Frame-0 instantaneous state
+const isBlockedByMe = computed(() => !!chatStore.blockStatusMap[props.recipientId]?.isBlockedByMe);
+const isBlockedByThem = computed(() => !!chatStore.blockStatusMap[props.recipientId]?.isBlockedByThem);
 const isUnblocking = ref(false);
-
 const textareaRef = ref(null);
 const emojiRef = ref(null);
 
 const checkBlockedStatus = async () => {
-    if (!props.recipientId) {
-        isBlockedByMe.value = false;
-        isBlockedByThem.value = false;
-        return;
-    }
-    try {
-        const status = await getBlockStatus(props.recipientId);
-        isBlockedByMe.value = !!status?.isBlockedByMe;
-        isBlockedByThem.value = !!status?.isBlockedByThem;
-    } catch (err) {
-        console.error("Failed to check blocked status:", err);
-    }
+    if (!props.recipientId) return;
+    await chatStore.fetchBlockStatus(props.recipientId);
 };
 
 const handleUnblock = async () => {
     if (!props.recipientId) return;
     isUnblocking.value = true;
     try {
-        await unblockUser(props.recipientId);
-        isBlockedByMe.value = false;
+        await chatStore.unblockUser(props.recipientId);
     } catch (err) {
         console.error("Failed to unblock user:", err);
     } finally {
@@ -86,9 +74,10 @@ const handleUnblock = async () => {
     }
 };
 
-watch(() => props.recipientId, () => {
-    isBlockedByThem.value = false;
-    checkBlockedStatus();
+watch(() => props.recipientId, (newId) => {
+    if (newId) {
+        checkBlockedStatus();
+    }
 }, { immediate: true });
 
 // Adjust height automatically as user types or adds newlines
