@@ -94,7 +94,7 @@ class SignalrService {
         }
     }
 
-    // Helper: wait until connected before invoking hub methods
+    // wait until connected before invoking hub methods
     async ensureConnected() {
         if (this.connection && this.connection.state === signalr.HubConnectionState.Connected) {
             return true;

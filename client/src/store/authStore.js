@@ -124,7 +124,7 @@ export const useAuthStore = defineStore('auth', {
                     this.user = profile;
                     storeUser(profile);
                 } catch (err) {
-                    // Only log out if the server explicitly rejected the token (401 Unauthorized)
+                    // Only log out if the server explicitly rejected the token
                     if (err?.status === 401) {
                         this.logOut();
                         return;

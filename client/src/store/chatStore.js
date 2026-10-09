@@ -731,7 +731,9 @@ export const useChatStore = defineStore('chat', {
                     clearTimeout(recipientTypingTimeouts.get(typingKey));
                     recipientTypingTimeouts.delete(typingKey);
                 }
+                // once the message is updated, remove the sender's typing indicator
                 if (this.typingUsers[updatedMessage.conversationId]?.[updatedMessage.senderId]) {
+                    // make a copy of the typing users object because it can cause reactive issues
                     const convTyping = { ...(this.typingUsers[updatedMessage.conversationId] || {}) };
                     delete convTyping[updatedMessage.senderId];
                     this.typingUsers = {
