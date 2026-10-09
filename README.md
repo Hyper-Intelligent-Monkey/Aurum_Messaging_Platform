@@ -182,8 +182,14 @@ Copy [.env.production.example](.env.production.example) to `.env` (or rename it 
 ### 2. Push to your Repository
 Clone your repository in your chosen cloud server (e.g. Google Cloud VM).
 
-### 3. Deploy with Docker Compose
-Open the Cloud Server terminal and run the following commands on your cloud server (e.g. Google Cloud VM):
+### 3. Configure Free Domain with DuckDNS
+Caddy requires a valid public domain name to run, follow these steps to configure your domain:
+1. Go to [duckdns.org](https://www.duckdns.org) and sign in.
+2. Create a free subdomain (e.g. `your-app.duckdns.org`).
+3. Set its IP to your **Cloud Server** (e.g. Google Cloud VM) public IP address.
+
+### 4. Deploy with Docker Compose
+Open the Cloud Server (e.g. Google Cloud VM) terminal and run the following commands:
 
 ```bash
 # Build and launch all containers in detached mode
@@ -196,8 +202,8 @@ docker compose ps
 docker compose logs -f
 ```
 
-### 4. Updating the Production Deployment
-To pull code updates and redeploy without downtime:
+### 5. Updating the Production Deployment
+To pull code updates and redeploy without downtime, run the following commands in the root directory:
 
 ```bash
 git pull origin main
