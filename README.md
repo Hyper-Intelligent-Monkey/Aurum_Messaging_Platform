@@ -26,6 +26,14 @@ A modern, full-stack, real-time messaging web application. Designed for direct 1
 
 ---
 
+## Current Limitations
+
+- **Group Chat is not Supported**: The platform is strictly designed for direct 1-on-1 private messaging. Group conversations, group administration, and multi-user room management are not currently supported.
+- **No Live Audio/Video Calls**: While sending voice messages (audio recordings) and video file attachments is supported, live real-time audio/video calling is not supported.
+- **No In-App GIF Search**: GIF can be sent as a file attachment, but no GIF search functionality is implemented.
+- **Transport Security Only (No E2EE)**: All communications are encrypted in transit over TLS (HTTPS & WSS) and stored securely in PostgreSQL, but client-side End-to-End Encryption (zero-knowledge E2EE) is not implemented.
+
+---
 
 ## Tech Stack
 
@@ -159,9 +167,48 @@ dotnet test server/
 
 ---
 
+## Production Deployment (Docker & Caddy)
+
+The production environment is containerized and orchestrated using **Docker Compose** and **Caddy** for automatic SSL termination and reverse proxying.
+
+### Containerized Stack
+- **`aurum-postgres`** (`postgres:16-alpine`): Isolated database container with healthcheck verification and persistent storage.
+- **`aurum-api`** (Multi-stage .NET 10): Lean ASP.NET Core production runtime container on port `8080`.
+- **`aurum-caddy`** (`caddy:2-alpine`): Edge reverse proxy managing automatic Let's Encrypt HTTPS/TLS certificates, WebSocket upgrades for SignalR, and Gzip/Zstandard compression on ports `80` and `443`.
+
+### 1. Configure Production Environment Variables
+Copy [.env.production.example](.env.production.example) to `.env` (or rename it to .env) and populate the following contents with your production environment configurations.
+
+### 2. Push to your Repository
+Clone your repository in your chosen cloud server (e.g. Google Cloud VM).
+
+### 3. Deploy with Docker Compose
+Open the Cloud Server terminal and run the following commands on your cloud server (e.g. Google Cloud VM):
+
+```bash
+# Build and launch all containers in detached mode
+docker compose up -d --build
+
+# Verify container health status
+docker compose ps
+
+# Monitor live logs
+docker compose logs -f
+```
+
+### 4. Updating the Production Deployment
+To pull code updates and redeploy without downtime:
+
+```bash
+git pull origin main
+docker compose up -d --build
+```
+
+---
+
 ## AI Assistant & Antigravity Setup
 
-This project uses **Google Antigravity** using [`AGENTS.md`](AGENTS.md) for architectural guidelines to enhance code quality and maintainability.
+This project utilized **Google Antigravity** using [`AGENTS.md`](AGENTS.md) for additional context to enhance code quality and maintainability.
 
 ### MCP Configuration
 At [`.agents/mcp_config.example.json`](.agents/mcp_config.example.json), remove the `.example` extension and populate this configuration if you have other MCP servers to use for this project. 
