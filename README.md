@@ -219,6 +219,19 @@ At [`.agents/mcp_config.example.json`](.agents/mcp_config.example.json), remove 
 
 ---
 
+## Performance & Optimization
+
+### Backend & Database
+- **Query Cancellation**: Propagates `CancellationToken` across all asynchronous EF Core database calls to terminate orphaned queries when users disconnect.
+- **Fast Search Indexing**: Stores pre-normalized usernames to enable indexed case-insensitive lookups without slow runtime `LOWER()` scans.
+
+### Frontend & Real-Time
+- **Multi-Tier Caching**: Cache avatars to eliminate redundant fetches across navigation.
+- **Non-Blocking UI Rendering**: Leverages `decoding="async"` (off-thread image decoding) and `loading="eager"` on critical assets to prevent frame drops.
+- **Socket Optimization**: Debounces typing events and uses automatic SignalR reconnection with room state re-syncing.
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
