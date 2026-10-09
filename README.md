@@ -2,6 +2,18 @@
 
 A modern, full-stack, real-time messaging web application. Designed for direct 1-on-1 communication, media exchange, and seamless user interaction. Built with **ASP.NET Core (.NET 10)**, **SignalR WebSockets**, **PostgreSQL**, and **Vue 3**.
 
+<details>
+  <summary>Click to expand Aurum Messaging screenshots</summary>
+  <br />
+  <p align="center">
+    <img src="aurum_images/seeder.png" alt="Contacts" width="49%" />
+    <img src="aurum_images/profile.png" alt="Profile View" width="49%" />
+    <img src="aurum_images/birtday.png" alt="Chat View" width="49%" />
+    <img src="aurum_images/video_player.png" alt="Media View" width="49%" />
+  </p>
+</details>
+
+
 ---
 
 ## Features
