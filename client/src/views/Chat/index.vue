@@ -241,10 +241,12 @@ watch(() => chatStore.loadingMessages, (isLoading) => {
 watch(() => chatStore.activeConversationId, (newId) => {
     if (newId) {
         uncontactedPartner.value = null;
-        nextTick(() => {
-            alignBottomInstantly();
-            isChatReady.value = true;
-        });
+        if (!chatStore.loadingMessages) {
+            nextTick(() => {
+                alignBottomInstantly();
+                isChatReady.value = true;
+            });
+        }
     }
 });
 

@@ -157,6 +157,7 @@ export const useChatStore = defineStore('chat', {
         async selectConversation(conversationId) {
             try {
                 if (this.activeConversationId !== conversationId) {
+                    this.messages = [];
                     this.conversationMedia = [];
                     this.hasMoreMedia = true;
                 }
@@ -211,17 +212,23 @@ export const useChatStore = defineStore('chat', {
             this.loadingMessages = true;
             try {
                 const msgs = await getMessages(conversationId, 25);
+                // Guard: Discard response if user already switched to another chat while fetching
+                if (this.activeConversationId !== conversationId) return;
+
                 // Sort ascending by sent date (oldest at top, latest at bottom)
                 this.messages = msgs && Array.isArray(msgs) 
                     ? msgs.slice().sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt)) 
                     : [];
                 this.hasMoreMessages = msgs && msgs.length >= 25;
             } catch (error) {
+                if (this.activeConversationId !== conversationId) return;
                 console.error("Failed to load messages:", error);
                 this.messages = [];
                 this.hasMoreMessages = false;
             } finally {
-                this.loadingMessages = false;
+                if (this.activeConversationId === conversationId) {
+                    this.loadingMessages = false;
+                }
             }
         },
 
@@ -819,6 +826,25 @@ export const useChatStore = defineStore('chat', {
             if (this.onMessagesSeen) signalrService.off("MessagesSeen", this.onMessagesSeen);
             if (this.onMessageDeleted) signalrService.off("MessageDeleted", this.onMessageDeleted);
             if (this.onMessageEdited) signalrService.off("MessageEdited", this.onMessageEdited);
+        },
+
+        // reset all chat state when logging out or switching accounts
+        resetState() {
+            this.conversations = [];
+            this.activeConversationId = null;
+            this.messages = [];
+            this.conversationMedia = [];
+            this.loadingConversations = false;
+            this.loadingMoreConversations = false;
+            this.hasMoreConversations = true;
+            this.loadingMessages = false;
+            this.loadingOlderMessages = false;
+            this.hasMoreMessages = true;
+            this.loadingMedia = false;
+            this.hasMoreMedia = true;
+            this.sendingMessage = false;
+            this.typingUsers = {};
+            this.blockStatusMap = {};
         },
     }
 });

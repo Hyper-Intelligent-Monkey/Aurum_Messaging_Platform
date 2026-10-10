@@ -17,6 +17,13 @@ export const useUserStore = defineStore('user', {
         clearError() {
             this.error = "";
         },
+        resetState() {
+            this.searchResults = [];
+            this.blockedUsers = [];
+            this.searchLoading = false;
+            this.blockedLoading = false;
+            this.error = "";
+        },
         // search registered users on platform
         async searchPlatformUsers(query) {
             this.clearError();

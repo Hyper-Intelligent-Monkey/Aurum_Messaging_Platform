@@ -29,7 +29,6 @@ const selectConversation = (conversation) => {
     if (!targetUsername) return;
 
     if (conversation.id && typeof conversation.id === "number") {
-        chatStore.activeConversationId = conversation.id;
         chatStore.selectConversation(conversation.id);
     }
     router.push({ name: "chat", params: { username: targetUsername } });

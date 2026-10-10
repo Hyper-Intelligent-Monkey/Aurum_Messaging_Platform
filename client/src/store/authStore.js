@@ -2,6 +2,7 @@ import { defineStore, acceptHMRUpdate } from 'pinia';
 import { register, login, googleLogin, logout, getStoredUser, getStoredToken, getCurrentUser, storeUser } from '../services/authService';
 import { signalrService } from '../services/signalrService';
 import { useChatStore } from './chatStore';
+import { useUserStore } from './userStore';
 import router from '../router';
 
 
@@ -43,6 +44,8 @@ export const useAuthStore = defineStore('auth', {
         async loginUser(email, password) {
             this.loginLoading = true;
             this.loginError = "";
+            useChatStore().resetState();
+            useUserStore().resetState();
             try {
                 const response = await login(email, password);
                 await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -77,6 +80,8 @@ export const useAuthStore = defineStore('auth', {
         async loginWithGoogle(idToken, username = null) {
             this.googleLoading = true;
             this.googleError = "";
+            useChatStore().resetState();
+            useUserStore().resetState();
             try {
                 const response = await googleLogin(idToken, username);
 
@@ -149,7 +154,10 @@ export const useAuthStore = defineStore('auth', {
         // log out the user
         async logOut() {
             logout();
-            useChatStore().removeSignalRListeners();
+            const chatStore = useChatStore();
+            chatStore.removeSignalRListeners();
+            chatStore.resetState();
+            useUserStore().resetState();
             await signalrService.disconnect();
             this.user = null;
             this.token = null;
